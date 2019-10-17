@@ -20,6 +20,7 @@ export interface StatusResult {
 export interface BuildStatus {
   status: string,
   platform: Platform,
+  createdAt: string,
   artifacts?: { s3Url: string };
 }
 
