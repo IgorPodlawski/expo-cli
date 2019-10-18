@@ -27,18 +27,10 @@ interface UserBuildData {
 }
 
 function getUserData(options: Options, projectUrl: string) {
-  const androidCredentials = {
-    keystore: {
-      keystoreData: 'MjEzNwo=',
-      keystoreFile: 'android/keystores/release.keystore',
-      keystorePassword: 'pass1',
-      keyAlias: 'alias',
-      keyPassword: 'pass2',
-    },
-  };
+  const { credentials, artifactPath } = getPlatformSpecificConfiguration(options.platform);
   return {
-    artifactPath: './android/app/build/outputs/apk/release/app-release-unsigned.apk',
-    credentials: androidCredentials,
+    artifactPath,
+    credentials,
     platform: options.platform,
     projectUrl,
     type: options.type,
@@ -74,7 +66,7 @@ async function convertFormDataToBuffer(formData: FormData): Promise<{ data: Buff
   });
 }
 
-async function wait(user: User, buildId: string, { timeout = 1200, interval = 30 } = {}) {
+async function wait(user: User, buildId: string, { timeout = 1800, interval = 30 } = {}) {
   log(`Waiting for build to complete. You can press Ctrl+C to exit.`);
   let spinner = ora().start();
   let time = new Date().getTime();
@@ -110,6 +102,35 @@ async function wait(user: User, buildId: string, { timeout = 1200, interval = 30
 async function getCurrentBuildInfo(user: User, buildId: string): Promise<BuildStatus> {
   const buildInfo: BuildStatus = await TurtleApi.clientForUser(user).getAsync(`build/status/${buildId}`);
   return buildInfo;
+}
+
+// TODO: get credentials from turtle.json
+function getPlatformSpecificConfiguration(platform: Platform): { credentials: any, artifactPath: string } {
+  if (platform === 'android') {
+    const credentials = {
+      keystore: {
+        keystoreData: '',
+        keystoreFile: 'android/keystores/release.keystore',
+        keystorePassword: '',
+        keyAlias: '',
+        keyPassword: '',
+      },
+    }
+    const artifactPath = './android/app/build/outputs/apk/release/app-release.apk';
+    return { credentials, artifactPath };
+  } else if (platform === 'ios') {
+    const credentials = {
+      provisioningProfile: '',
+      distributionCertificate: {
+        data: '',
+        password: '',
+      }
+    };
+    const artifactPath = './ios/build/TurtleExpoApp.ipa';
+    return { credentials, artifactPath };
+  } else {
+    throw new BuildError(`Wrong build platform passed!`);
+  }
 }
 
 export { getUserData, prepareConfig, wait };
